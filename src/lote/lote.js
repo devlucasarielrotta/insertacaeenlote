@@ -108,8 +108,9 @@ const armarScript = (archivoLOTE) => {
     
 
     //arma el pie del script
-    archivoLoteAArrayString[archivoLoteAArrayString.length-1] = archivoLoteAArrayString[archivoLoteAArrayString.length-1].replace('"',"'"+"||chr(10);") ;
-    archivoLoteAArrayString.splice(archivoLoteAArrayString.length,0,"dbms_lob.append(str,str"+(n-1)+")';");
+
+    archivoLoteAArrayString[archivoLoteAArrayString.length-1] = archivoLoteAArrayString[archivoLoteAArrayString.length-1] += "'||chr(10);" ;
+    archivoLoteAArrayString.splice(archivoLoteAArrayString.length,0,"dbms_lob.append(str,str"+(n-1)+");");
     archivoLoteAArrayString.splice(archivoLoteAArrayString.length,0,"");
     archivoLoteAArrayString.splice(archivoLoteAArrayString.length+1,0,"--modifica 1 registro");
     archivoLoteAArrayString.splice(archivoLoteAArrayString.length+2,0,"update feprd.lote_facturas_electronicas");
