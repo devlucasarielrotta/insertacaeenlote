@@ -2,7 +2,7 @@ import { archivoCAES, archivoLOTE,insertarCaeEnLote,arreglaComillaSimple, pathCA
 
 
 //AÑO - MES - DIA
-let fecha_vencimiento_cae= '20230708';
+let fecha_vencimiento_cae= '20231708';
 let fecha_obtencion_cae = '20231021';
 
 
@@ -23,16 +23,12 @@ console.log(`El lote se esta procesando con fecha_obtencion_cae: ${fecha_obtenci
 console.log("\n-------------------------------------------------------\n")
 let [archivoSinComillas,cantidadComillas] = arreglaComillaSimple(archivoLOTE);
 let [archivoLoteConCAES,archivosProcesados] = insertarCaeEnLote(archivoSinComillas,archivoCAES,fecha_vencimiento_cae,fecha_obtencion_cae);
-archivoLoteConCAES = armarScript(archivoLoteConCAES);
 
+archivoLoteConCAES = armarScript(archivoLoteConCAES);
 crearSalida(archivoLoteConCAES,razonSocial);
 
-
-
-
-
 console.log("-------------------------------------------------------")
-console.log("Se procesaron " + cantidadComillas.length + " comillas simples ");
+console.log("Se procesaron " + cantidadComillas + " lineas con comillas simples ");
 console.log("-------------------------------------------------------")
 console.log("Se procesaron en total " + archivosProcesados + " caes ");
 console.log("-------------------------------------------------------")

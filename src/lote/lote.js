@@ -24,24 +24,46 @@ const leerArchivoLOTE = (path,nombreArchivo) => {
     }
 }
 
+/**
+ * @param {ARRAYLOTE} archivoLOTErray
+ * @returns {String} razonSocial
+ */
 const buscarRazonSocial = (archivoLote) => {    
-    const razonSocial = [];
+    let razonSocial;
     const archivoLOTEcopia = [...archivoLote];
-    const regex = new RegExp(/[".<razon_social></razon_social>"]/g)
-    for (let index = 0; index < archivoLOTEcopia.length; index++) {
-        if(archivoLOTEcopia[index].includes("<razon_social>")){
-            archivoLOTEcopia[index] = archivoLOTEcopia[index].replace(regex, "") 
-            razonSocial.push(archivoLOTEcopia[index].trim()) 
-            break;
+    const regex = new RegExp(/[".<razon_social></razon_social>:"]/g)
+    try {
+        for (let index = 0; index < archivoLOTEcopia.length; index++) {
+
+            if(archivoLOTEcopia[index].includes("<razon_social>")){
+                console.log(archivoLOTEcopia[index])
+                archivoLOTEcopia[index] = archivoLOTEcopia[index].replace(regex, "") 
+                razonSocial = (archivoLOTEcopia[index].trim()) 
+                break;
+            }
+        
         }
+        
+        razonSocial === undefined ? razonSocial = "NO SE ENCONTRO LA RAZON SOCIAL":razonSocial;
     
+        return " "+razonSocial+" ";
+    }catch(error){
+        console.log(error);
+        throw new Error ('Se ha producido un error al leer el lote ' + error)
     }
-    
-    return razonSocial;
+
 }
+/**
+ * @param {ARRAYLOTE} archivoLote
+ * @param {ARRAYLOTE} archivoCAES
+ * @param {String} fecha_vencimiento_cae
+ * @param {String} fecha_obtencion_cae
+ */
 const insertarCaeEnLote = (archivoLote,archivoCAES,fecha_vencimiento_cae,fecha_obtencion_cae) => {
    let i = 0,j=0;
-   if(fecha_obtencion_cae.length != 8 || fecha_vencimiento_cae.length != 8) throw new Error ('Error en las fechas de vencimiento y/o obtencion del cae');
+   if(fecha_obtencion_cae.length != 8 || fecha_vencimiento_cae.length != 8) throw new Error ('Error en las fechas de vencimiento y/o obtencion del cae, debe ser formato YYYYMMDD valido de 8 caracteres');
+   if(Number(fecha_obtencion_cae[4])>1 || Number(fecha_vencimiento_cae[4]) > 1) throw new Error ('Error en las fechas de vencimiento y/o obtencion del cae, el primer digito del mes no puede ser mayor a 1');
+   if(Number(fecha_obtencion_cae[7])>3 || Number(fecha_vencimiento_cae[6]) > 3) throw new Error ('Error en las fechas de vencimiento y/o obtencion del cae, el primer digito del dia no puede ser mayor a 3');
    const longitudCaes = archivoCAES.length;
 
    while(i != longitudCaes){
@@ -61,68 +83,87 @@ const insertarCaeEnLote = (archivoLote,archivoCAES,fecha_vencimiento_cae,fecha_o
    return [archivoLote,i];
 }
 
+
+/**
+ * 
+ * @param {ARRAYLOTE} archivoLOTE 
+ * @returns {[ARRAYLOTE, number]} archivoLOTEcopia, comillas
+ */
 const arreglaComillaSimple = (archivoLOTE) => {
     
         
         const archivoLOTEcopia  = [...archivoLOTE];
-        const encontradoEn = [];
+        let comillas = 0;
        
         for (let index = 0; index < archivoLOTEcopia.length; index++) {
           if (archivoLOTEcopia[index].includes("'")) {
               archivoLOTEcopia[index] = archivoLOTEcopia[index].replaceAll(/'/g, "'||''''||'");
-              encontradoEn.push(index+1);
+              comillas++;
+              
           }
         }
       
     
-        return [archivoLOTEcopia,encontradoEn];
+        return [archivoLOTEcopia,comillas];
       
 }
 
+/**
+ * 
+ * @param {ARRAYLOTE} archivoLOTE 
+ * @returns {ARRAYLOTE} archivoLote
+ */
 const armarScript = (archivoLOTE) => {
-    const archivoLoteAArrayString = [...archivoLOTE];
+    const archivoLote = [...archivoLOTE];
 
-    archivoLoteAArrayString[0] = "str:='" + archivoLoteAArrayString[0];
-    archivoLoteAArrayString[395] = archivoLoteAArrayString[395] + "'||chr(10);";
-    archivoLoteAArrayString[396] = "str1:='"+archivoLoteAArrayString[396];
+    archivoLote[0] = "str:='" + archivoLote[0];
+    archivoLote[395] = archivoLote[395] + "'||chr(10);";
+    archivoLote[396] = "str1:='"+archivoLote[396];
  
     let n = 2;
     let j = 0;
     // arma la concatenacion para el script
-    for(j;j<archivoLoteAArrayString.length;j++){
+    for(j;j<archivoLote.length;j++){
         if(j==395*n){
-            archivoLoteAArrayString[j] = archivoLoteAArrayString[j] + "'||chr(10);";
-            archivoLoteAArrayString.splice(j+1,0,"        dbms_lob.append(str,str"+(n-1)+");");
-            archivoLoteAArrayString[j+2] = "str"+n+":='"+archivoLoteAArrayString[j+2];
+            archivoLote[j] = archivoLote[j] + "'||chr(10);";
+            archivoLote.splice(j+1,0,"        dbms_lob.append(str,str"+(n-1)+");");
+            archivoLote[j+2] = "str"+n+":='"+archivoLote[j+2];
             n++;
         }
     }
     
     // arma cabecera del script
-    archivoLoteAArrayString.unshift("set define off","declare","","str clob;","BEGIN");
+    archivoLote.unshift("set define off","declare","","str clob;","BEGIN");
     let i = 1;
     j = 4;
     for(i;i<n;i++,j++){
-        archivoLoteAArrayString.splice(j,0,"str"+i+" varchar2 (32000);");
+        archivoLote.splice(j,0,"str"+i+" varchar2 (32000);");
     }
     
 
     //arma el pie del script
 
-    archivoLoteAArrayString[archivoLoteAArrayString.length-1] = archivoLoteAArrayString[archivoLoteAArrayString.length-1] += "'||chr(10);" ;
-    archivoLoteAArrayString.splice(archivoLoteAArrayString.length,0,"dbms_lob.append(str,str"+(n-1)+");");
-    archivoLoteAArrayString.splice(archivoLoteAArrayString.length,0,"");
-    archivoLoteAArrayString.splice(archivoLoteAArrayString.length+1,0,"--modifica 1 registro");
-    archivoLoteAArrayString.splice(archivoLoteAArrayString.length+2,0,"update feprd.lote_facturas_electronicas");
-    archivoLoteAArrayString.splice(archivoLoteAArrayString.length+3,0,"set xml_cabecera_lote = str");
-    archivoLoteAArrayString.splice(archivoLoteAArrayString.length+4,0,"where id_interno_lote = ");
-    archivoLoteAArrayString.splice(archivoLoteAArrayString.length+5,0,"and cuit_vendedor = '';");
-    archivoLoteAArrayString.splice(archivoLoteAArrayString.length+6,0,"");
-    archivoLoteAArrayString.splice(archivoLoteAArrayString.length+7,0,"commit;");
-    archivoLoteAArrayString.splice(archivoLoteAArrayString.length+8,0,"end;");
+    archivoLote[archivoLote.length-1] = archivoLote[archivoLote.length-1] += "'||chr(10);" ;
+    archivoLote.splice(archivoLote.length,0,"dbms_lob.append(str,str"+(n-1)+");");
+    archivoLote.splice(archivoLote.length,0,"");
+    archivoLote.splice(archivoLote.length+1,0,"--modifica 1 registro");
+    archivoLote.splice(archivoLote.length+2,0,"update feprd.lote_facturas_electronicas");
+    archivoLote.splice(archivoLote.length+3,0,"set xml_cabecera_lote = str");
+    archivoLote.splice(archivoLote.length+4,0,"where id_interno_lote = ");
+    archivoLote.splice(archivoLote.length+5,0,"and cuit_vendedor = '';");
+    archivoLote.splice(archivoLote.length+6,0,"");
+    archivoLote.splice(archivoLote.length+7,0,"commit;");
+    archivoLote.splice(archivoLote.length+8,0,"end;");
 
-    return archivoLoteAArrayString;
+    return archivoLote;
 }
+
+/**
+ * 
+ * @param {ARRAYLOTE} archivoLOTE
+ * @param {String} nombreArchivo 
+ * @returns {void}
+ */
 const crearSalida = (archivoLOTE,nombreArchivo) => {
     const date = new Date().toString().split('(')[0].replaceAll(":","_");
   
@@ -135,6 +176,7 @@ const crearSalida = (archivoLOTE,nombreArchivo) => {
         throw new Error(error)
     }
 }
+
 export {
     leerArchivoLOTE,
     insertarCaeEnLote,
